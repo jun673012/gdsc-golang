@@ -26,7 +26,52 @@ var (
 // Handlers
 //----------
 
+func createUser(c echo.Context) error {
+	lock.Lock()
+	defer lock.Unlock()
+	u := &user{
+		ID: seq,
+	}
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+	users[u.ID] = u
+	seq++
+	return c.JSON(http.StatusCreated, u)
+}
 
+func getUser(c echo.Context) error {
+	lock.Lock()
+	defer lock.Unlock()
+	id, _ := strconv.Atoi(c.Param("id"))
+	return c.JSON(http.StatusOK, users[id])
+}
+
+func updateUser(c echo.Context) error {
+	lock.Lock()
+	defer lock.Unlock()
+	u := new(user)
+	if err := c.Bind(u); err != nil {
+		return err
+	}
+	id, _ := strconv.Atoi(c.Param("id"))
+	users[id].Name = u.Name
+	return c.JSON(http.StatusOK, users[id])
+}
+
+func deleteUser(c echo.Context) error {
+	lock.Lock()
+	defer lock.Unlock()
+	id, _ := strconv.Atoi(c.Param("id"))
+	delete(users, id)
+	return c.NoContent(http.StatusNoContent)
+}
+
+func getAllUsers(c echo.Context) error {
+	lock.Lock()
+	defer lock.Unlock()
+	return c.JSON(http.StatusOK, users)
+}
 
 func main() {
 	e := echo.New()
@@ -45,4 +90,3 @@ func main() {
 	// Start server
 	e.Logger.Fatal(e.Start(":1323"))
 }
-
